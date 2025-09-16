@@ -1,4 +1,3 @@
-#Notas de estudio
 #Hasta ahora has aprendido sobre los diagramas de dispersión (creados con geom_point()) 
 # y las curvas suaves (creadas con geom_smooth()) 
 # Para visualizar la relación entre dos variables numéricas. 
