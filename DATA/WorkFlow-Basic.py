@@ -53,3 +53,4 @@ penguins = load_penguins()
     + geom_smooth(method="lm")
 )
 
+
