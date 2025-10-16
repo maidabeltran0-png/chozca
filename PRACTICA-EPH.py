@@ -173,3 +173,5 @@ df_est_lugar_nacimiento
 #7. "edad_promedio": np.average(g["CH06"], weights=g["PONDERA"])	Promedio ponderado de la edad.
 #8.	.sort_values("porc_superior_completo", ascending=False)	Ordena los resultados de mayor a menor.
 #9. .reset_index(drop=True)	Limpia el índice y deja filas numeradas.
+
+
