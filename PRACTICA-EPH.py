@@ -175,3 +175,23 @@ df_est_lugar_nacimiento
 #9. .reset_index(drop=True)	Limpia el índice y deja filas numeradas.
 
 
+#Ejercicio 7: Medidas de dispersión por nivel educativo
+#Consigna: Para las personas ocupadas, calcula por nivel educativo:
+# • El desvío estándar del ingreso
+# • El coeficiente de variación (desvío estándar / media * 100)
+# • El ingreso mínimo y máximo
+# • El rango de ingresos (máximo - mínimo)
+# Ordena los resultados por coeficiente de variación.
+
+df_dispersión = (df_seleccionado[df_seleccionado["ESTADO"] == 1]
+    .groupby("nivel_educativo")
+).apply(lambda g: pd. Series({
+    "desvio_estandar_ingreso": np.sqrt(np.cov(g["P21"], aweights=g["PONDERA"])),
+    "coef_variacion": (np.sqrt(np.cov(g["P21"], aweights=g["PONDERA"])) / 
+    np.average(g["P21"], weights=g["PONDERA"])) * 100,
+    "ingreso_minimo": g["P21"].min(),
+    "ingreso_maximo": g["P21"].max(),
+    "rango_ingresos": g["P21"].max() - g["P21"].min()
+}))
+df_dispersión = df_dispersión.sort_values("coef_variacion")
+df_dispersión
