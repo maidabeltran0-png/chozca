@@ -195,3 +195,218 @@ df_dispersión = (df_seleccionado[df_seleccionado["ESTADO"] == 1]
 }))
 df_dispersión = df_dispersión.sort_values("coef_variacion")
 df_dispersión
+
+#Paso	Código	Qué hace
+#1. df_seleccionado[df_seleccionado["ESTADO"] == 1]	Filtra solo personas ocupadas.
+#2. .groupby("nivel_educativo")	Agrupa por nivel educativo.
+#3.	apply(lambda g: ...)	Aplica una función a cada grupo g.
+#4.	pd.Series({...})	Crea una fila con las métricas de dispersión.
+#5.	"desvio_estandar_ingreso": np.sqrt(np.cov(..., aweights=g["PONDERA"]))	
+# Calcula el desvío estándar ponderado del ingreso.
+#6.	"coef_variacion": (...)	Calcula el coeficiente de variación.
+#7.	"ingreso_minimo": g["P21"].min()	Encuentra el ingreso mínimo.
+#8.	"ingreso_maximo": g["P21"].max()	Encuentra el ingreso máximo.
+#9.	"rango_ingresos": g["P21"].max() - g["P21"].min()	Calcula el rango de ingresos.
+#10.	.sort_values("coef_variacion")	Ordena los resultados por coeficiente de variación.
+#El coeficiente de variación es una medida relativa de dispersión que indica
+# qué tan grande es el desvío estándar en relación con la media.
+# Se expresa como un porcentaje y es útil para comparar la variabilidad entre diferentes conjuntos de datos.
+
+
+#apply recorre cada grupo creado por groupby y aplica la función definida en lambda g: ...
+# Cada grupo (g) es un subconjunto del DataFrame original, que contiene solo las filas 
+# correspondientes a una categoría.
+# Dentro de la función lambda, se crea una nueva Serie de pandas
+# que contiene las estadísticas calculadas para ese grupo específico.
+# El resultado final es un DataFrame donde cada fila representa un grupo
+# (nivel educativo) y las columnas contienen las estadísticas calculadas.
+#np.sqrt(np.cov(..., aweights=g["PONDERA"])) calcula el desvío estándar ponderado.
+# La función np.cov calcula la covarianza, y al tomar la raíz cuadrada obtenemos el desvío estándar.
+# El argumento aweights=g["PONDERA"] indica que se deben usar los valores de PONDERA
+# como pesos para el cálculo, lo que ajusta la medida de dispersión según la importancia de cada observación.
+
+
+#Ejercicio 8: Análisis por sexo y nivel educativo
+#Consigna: Agrupa los datos por sexo y nivel educativo, y calcula:
+#• La cantidad de personas (ponderada)
+#• El ingreso promedio (ponderado)
+#• La tasa de ocupación (porcentaje de ocupados)
+# Luego calcula la brecha de ingresos entre varones y mujeres para cada nivel educativo.
+
+df_nivel_educ_sexo = (df_seleccionado.groupby(["sexo_descr", "nivel_educativo"])).apply(lambda g: pd.Series ({
+    "cantidad_personas_ponderada": g["PONDERA"].sum(),
+    ##La función apply() aplica una operación personalizada a cada grupo. En este caso, esa operación 
+    # devuelve una Serie de pandas con varios indicadores.
+    #Suma los pesos muestrales del grupo.
+    # Esto representa la cantidad total de personas en la población (no solo en la muestra), 
+    # porque cada individuo cuenta con su peso.
+
+    "ingreso_promedio_ponderado": np.average(g["P21"], weights=g["PONDERA"]),
+    #Calcula el ingreso promedio ponderado usando los pesos muestrales. 
+    # Esto da un ingreso medio representativo de la población, no solo de la muestra.
+
+    "tasa_ocupacion": np.average((g["ESTADO"] == 1).astype(int), weights=g["PONDERA"]) * 100
+    # Calcula el promedio de los ocupados y los convierte en enteros (1 para ocupado, 0 para no ocupado).
+    # con weights=g["PONDERA"] se pondera por el factor de expansión.
+    #Calcula la tasa de ocupación como el promedio ponderado de la condición de actividad.
+
+}))
+df_nivel_educ_sexo = df_nivel_educ_sexo.reset_index()
+# .reset_index() convierte los índices de fila actuales (sexo_descr, nivel_educativo)
+# en columnas normales, lo que facilita el acceso y la manipulación de los datos.
+#Aplico lambda a cada grupo definido por la combinación de sexo y nivel educativo. Obteniendo
+# un DataFrame con múltiples filas por nivel educativo (una para cada sexo) en columnas con las 
+# estadísticas calculadas.
+
+# Calculo la brecha de ingresos entre varones y mujeres para cada nivel educativo
+brecha_ingresos = df_nivel_educ_sexo.pivot(
+    index="nivel_educativo", 
+    columns="sexo_descr", 
+    values="ingreso_promedio_ponderado"
+)
+#pivot() reorganiza el DataFrame para que cada nivel educativo tenga una fila,
+# y las columnas sean los ingresos promedio para varones y mujeres.
+
+brecha_ingresos["brecha_varones_mujeres"] = (
+    (brecha_ingresos["Varón"] - brecha_ingresos["Mujer"]) / brecha_ingresos["Mujer"]
+) * 100 
+# Calcula la brecha porcentual entre varones y mujeres considerando el ingreso promedio ponderado.
+# La fórmula es: ((Ingreso Varones - Ingreso Mujeres) / Ingreso Mujeres) * 100
+brecha_ingresos = brecha_ingresos.reset_index()
+# Resetea el índice para que nivel_educativo vuelva a ser una columna normal.
+
+brecha_ingresos
+
+
+
+
+#Ejercicio 9: Cuartiles de ingreso por nivel educativo
+# Consigna: Para las personas ocupadas, calcula por nivel educativo:
+#• El primer cuartil de ingresos (P25)
+#• La mediana de ingresos (P50)
+#• El tercer cuartil de ingresos (P75)
+#• El rango intercuartílico (IQR = P75 - P25)
+#Ordena los resultados por mediana de ingresos.
+
+df_cuartiles = (df_seleccionado[df_seleccionado["ESTADO"] == 1]).groupby("nivel_educativo").apply(lambda g: 
+    pd.Series({
+    "P25": np.percentile(g["P21"], 25),
+    "P50": np.percentile(g["P21"], 50),
+    #calculo de la mediana
+    "P75": np.percentile(g["P21"], 75), }))
+    #calculo del tercer cuartil
+df_cuartiles["IQR"] = df_cuartiles["P75"] - df_cuartiles["P25"]# calculo del rango intercuartilico
+df_cuartiles = df_cuartiles.sort_values("P50") #Ordeno por mediana de ingresos (P50)
+df_cuartiles
+#de mi dataframe seleccionado, filtro solo personas ocupadas y los agrupo por nivel educativo
+#Luego, aplico una función a cada grupo que calcula los percentiles 25, 50 y 75 del ingreso (P21).
+#Después, calculo el rango intercuartílico (IQR) restando P25 de P75.
+#Finalmente, ordeno los resultados por la mediana de ingresos (P50) de manera ascendente.
+#np.percentile() calcula los percentiles especificados del ingreso (P21) para cada grupo.
+#El rango intercuartílico (IQR) es una medida de dispersión que indica la amplitud del
+# rango central de los datos, ayudando a identificar la variabilidad en los ingresos dentro de cada nivel educativo.
+
+#Ejercicio 10: Estadísticas por lugar de nacimiento y sexo
+#Consigna: Agrupa los datos por lugar de nacimiento y sexo, y calcula:
+#• La cantidad de personas (ponderada)
+#• El porcentaje de personas con nivel secundario completo o superior
+#• La edad promedio (ponderada)
+#• La tasa de actividad (porcentaje de personas económicamente activas)
+# Finalmente, elimina la agrupación y ordena los resultados por lugar de nacimiento 
+# y luego por tasa de actividad de manera descendenteactividad de manera descendente
+
+df_lugar_nacimiento_sexo = (df_seleccionado.groupby(["lugar_nacimiento", "sexo_descr"])).apply(
+    lambda g: pd.Series ({
+    "cantidad_personas_ponderada": g["PONDERA"].sum(),
+    "porc_secundario_superior": np.average(g["nivel_educativo"].isin(["Secundaria completa", "Superior incompleto", "Superior completo"]), weights=g["PONDERA"]) * 100,
+    "edad_promedio_ponderada": np.average(g["CH06"], weights=g["PONDERA"]),
+    "tasa_actividad": np.average(g["ESTADO"].isin([1, 2]).astype(int), weights=g["PONDERA"]) * 100
+})
+)
+#de mi dataframe seleccionado, agrupo por lugar de nacimiento y sexo
+#Luego, aplico una función a cada grupo que calcula las estadísticas solicitadas.
+#cantidad_personas_ponderada: Suma los pesos muestrales del grupo.
+#porc_secundario_superior: Calcula el porcentaje ponderado de personas con nivel secundario completo o superior. Weights=g["PONDERA"] pondera por el factor de expansión.
+#edad_promedio_ponderada: Calcula la edad promedio ponderada usando los pesos muestrales.
+#tasa_actividad: Calcula la tasa de actividad como el promedio ponderado de personas económicamente activas (ocupados o desocupados).
+#.isin() verifica si el nivel educativo está en la lista dada (1 OCUPADO Y 2 DESOCUPADO)
+#.astype(int) convierte el booleano en 1 y 0 para el cálculo del promedio ponderado.
+
+
+df_lugar_nacimiento_sexo = df_lugar_nacimiento_sexo.reset_index()
+# Elimino la agrupación para que lugar_nacimiento y sexo_descr sean columnas normales
+df_lugar_nacimiento_sexo = df_lugar_nacimiento_sexo.sort_values(by=["lugar_nacimiento", "tasa_actividad"], 
+ascending=[True, False]
+)
+# Ordeno lugar de nacimiento ascendente y tasa de actividad descendente
+df_lugar_nacimiento_sexo
+
+
+#Desafío final (Opcional)
+#Consigna: Combina las funciones de Tidyverse para crear un análisis que responda a la siguiente pregunta:
+#¿Cómo varían los ingresos y la educación según el lugar de nacimiento y qué grupos tienen mayor desigualdad
+#interna?
+#Para ello deberás:
+#1. Filtrar solo personas ocupadas entre 25 y 65 años
+#2. Agrupar por lugar de nacimiento y calcular estadísticas de ingresos (promedio, mediana, desvío, CV)
+#3. Calcular la proporción de personas con diferentes niveles educativos por lugar de nacimiento
+#4. Ordenar los resultados según algún criterio relevante
+
+#Paso	Código	Qué hace
+df_desafio = (df_seleccionado 
+    .loc[(df_seleccionado["ESTADO"] == 1) & (df_seleccionado["CH06"].between(25, 65))]
+    .groupby("lugar_nacimiento"))
+#1.	.De los ocupados aplico Filtrado: .loc[...]	Filtrando solo personas ocupadas entre 25 y 65 años.
+#2.	Agrupación: .groupby("lugar_nacimiento") Agrupa por lugar de nacimiento.
+
+df_desafio = df_desafio.apply(lambda g: pd.Series({
+#3.Aplicación de funciones: .apply(lambda g: ...)	Calcula estadísticas de ingresos y educación para cada grupo.
+#4.Estadísticas de ingresos: calculo promedio, mediana, desvío estándar y coeficiente de variación ponderados.
+    "ingreso_promedio": np.average(g["P21"], weights=g["PONDERA"]),
+    "ingreso_mediana": np.percentile(g["P21"], 50),                 
+    "desvio_estandar_ingreso": np.sqrt(np.cov(g["P21"], aweights=g["PONDERA"])),
+    "coef_variacion": (np.sqrt(np.cov(g["P21"], aweights=g["PONDERA"])) / np.average(g["P21"], weights=g["PONDERA"])) * 100,
+    #coeficiente de variación = desvío estándar / media * 100, indica la dispersión relativa de los ingresos. 
+    # Que tanto varían los ingresos en relación con el promedio de ingresos.
+
+#5.Proporción de niveles educativos: Calcula el porcentaje ponderado de personas con diferentes niveles educativos.
+    "porc_primaria_completa": np.average(g["nivel_educativo"].  eq("Primaria completa"), weights=g["PONDERA"]) * 100,     
+    #.eq() compara cada valor de nivel_educativo con "Primaria completa", devolviendo una serie booleana.
+    # de los que son True (cumplen la condición), calcula el promedio ponderado usando PONDERA.  
+    # Multiplico por 100 para obtener el porcentaje.
+    
+
+    "porc_secundaria_completa": np.average(g["nivel_educativo"].  eq("Secundaria completa"), weights=g["PONDERA"]) * 100,
+    # similar al anterior, pero para "Secundaria completa".
+    "porc_superior_completo": np.average(g["nivel_educativo"].  eq("Superior completo"), weights=g["PONDERA"]) * 100
+})) 
+#6.	Ordenamiento: .sort_values("coef_variacion", ascending=False)    
+# Ordena los resultados por coeficiente de variación de ingresos de manera descendente.
+df_desafio = df_desafio.sort_values("coef_variacion", ascending=False)
+df_desafio
+
+#¿Cómo varían los ingresos y la educación según el lugar de nacimiento y qué grupos tienen mayor desigualdad
+#interna?
+# Respuesta:
+# Los ingresos varían significativamente según el lugar de nacimiento, con diferencias notables en el ingreso promedio y mediano.
+# La desigualdad interna, medida por el coeficiente de variación, también difiere entre los grupos,
+# indicando que algunos lugares de nacimiento tienen una mayor dispersión en los ingresos que otros.
+# Además, la proporción de personas con diferentes niveles educativos varía según el lugar de nacimiento,
+# lo que sugiere que la educación también está influenciada por el origen geográfico.
+
+#Hay una variacion muy importante en el ingreso promedio de acuerdo al lugar de nacimiento. 
+# Siendo argentina el pais de nacimiento con menor ingreso promedio. 
+# Los extranjeros tiene un salario promedio levemente superior de 17.030 unidades monetarias absolutas, 
+# siendo superado por los nacidos en otras provincias con un ingreso promedio de 17.500 unidades monetarias absolutas.
+#La desigualdad se hace avidente cuando observamos que los que nacen en otra provincia 
+# tienen niveles de educacion superior que casi llegan a duplicar al de los nacidos en argentina 
+# y en el extranjero.
+
+# La desigualdad interna, medida por el coeficiente de variación,
+# indica que los nacidos en otra provincia tienen una mayor dispersión en los ingresos (CV= 66.27%)
+# en comparación con los nacidos en Argentina (CV= 60.45%) y en el extranjero (CV= 59.12%).
+# Esto sugiere que, aunque los nacidos en otra provincia tienen un ingreso promedio más alto,
+# también enfrentan una mayor desigualdad en sus ingresos en comparación con los otros grupos.  
+# Además, la proporción de personas con diferentes niveles educativos varía según el lugar de nacimiento.
+# Los nacidos en otra provincia tienen una mayor proporción de personas con nivel secundario completo
+# y superior completo en comparación con los nacidos en Argentina y en el extranjero.
