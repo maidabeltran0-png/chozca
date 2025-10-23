@@ -56,8 +56,128 @@ students
 #Desde skimpy, utilizaremos la función clean_columns(); esta toma un marco de datos y 
 # devuelve un marco de datos con nombres de variables convertidos al formato snake.
 import skimpy as sk 
-
 from skimpy import clean_columns
 
 students = clean_columns(students)
 students
+
+#Otra tarea común tras leer datos es considerar los tipos de variables. 
+# En la columna favourite_food, hay varios alimentos 
+# y, a continuación, el valor NaN, que se ha leído como un número de punto flotante 
+# en lugar de una cadena faltante. Podemos solucionar esto convirtiendo esa 
+# columna explícitamente en cadenas:
+students["favourite_food"] = students["favourite_food"].astype("string")
+students
+#Pero si el archivo original tenía un formato raro (por ejemplo, "NaN" sin comillas),
+# pandas podría interpretarlo como un número de punto flotante.
+#Si pandas interpreta una columna de texto como número (float), 
+# muchas funciones no van a funcionar correctamente.
+#Al convertirla a string, asegurás que todos los métodos de texto funcionen bien.
+#El tipo string de pandas usa el valor <NA>, que se comporta 
+# mejor que NaN (de NumPy) en operaciones lógicas o de texto.
+
+
+#De forma similar, "edad" tiene tipos de datos mixtos: cadena y entero. 
+# Mapeemos el "cinco" con el número cinco.
+
+students["age"] = students["age"].replace("five", 5)
+students["age"]
+
+# Otro ejemplo donde el tipo de dato es incorrecto es meal_type. 
+# Esta es una variable categórica con un conjunto conocido de posibles valores. 
+# Pandas tiene un tipo de dato especial para estos: No tiene infinitos valores posibles, ni un orden numérico continuo.
+# Eso la diferencia de, por ejemplo, age, que sí es una variable numérica (4, 5, 6, 7, 8…).
+# Pero si la convertís a category, gana ventajas: menos uso de memoria y operaciones más rápidas.
+
+students["meal_plan"] = students["meal_plan"].astype("category")
+students["meal_plan"]
+#Tenga en cuenta que los valores de la variable meal_type se han mantenido exactamente iguales, 
+# pero el tipo de variable ha cambiado de objeto a categoría.
+# Resulta un poco tedioso tener que revisar las columnas una por una, asignando una sola línea 
+# para aplicar el tipo. 
+# Una alternativa es pasar un diccionario que asigne los nombres de las columnas a los tipos, 
+# como se muestra a continuación:
+students = students.astype({"student_id": "int", "full_name": "string", "age": "int"})
+students.info()
+
+#Convierte la columna favourite_food al tipo cadena de texto (string), 
+# para que todos sus valores (incluidos los faltantes <NA>) se traten como texto,
+# y no como números ni valores flotantes.
+
+#8.2.3. Exercises
+#What function would you use to read a file where fields were separated with “|”?
+#pd.read_csv("file.txt", sep="|")
+
+#8.3. Reading data from multiple files
+#A veces, los datos se dividen en varios archivos. Por ejemplo, puede tener un archivo por mes o por año. 
+# En tales casos, puede leer cada archivo por separado y luego concatenarlos en un solo marco de datos.
+#Aquí hay un ejemplo simple que lee tres archivos CSV y los concatena en un solo marco de datos.
+
+#Con pd.read_csv() puede leer estos datos uno por uno y luego apilarlos en un único marco 
+# de datos mediante la función pd.concat(). Esto se ve así:
+
+#list_of_dataframes = [
+  #  pd.read_csv(x) # for x in ["data/01-sales.csv", "data/02-sales.csv", "data/03-sales.csv"]
+#]
+#sales_files = pd.concat(list_of_dataframes)
+#sales_files
+#Aquí, usamos una lista de comprensión para leer cada archivo en una lista de marcos de datos,
+# y luego pasamos esa lista a pd.concat() para apilarlos en un solo marco de datos.
+#Tenga en cuenta que los índices originales de cada archivo se han mantenido.
+# Si desea restablecer el índice para que sea único, puede usar el método .reset_index().
+#sales_files = sales_files.reset_index(drop=True)
+
+#Si tiene muchos archivos que desea leer, puede resultar complicado escribir sus nombres como una lista. 
+# En su lugar, puede usar el paquete glob (integrado en Python) para encontrar los archivos 
+# automáticamente mediante la búsqueda de un patrón en los nombres. 
+# Tenga en cuenta que puede haber otros archivos CSV en el directorio data/, 
+# por lo que aquí especificamos "*-sales.csv" para asegurarnos de obtener solo los archivos que 
+# incluyan la palabra "sales". Aquí, "*" actúa como comodín: representa cualquier serie de caracteres.
+
+#import glob
+
+#list_of_csvs = glob.glob("data/*-sales.csv")
+#print("List of csvs is:")
+#print(list_of_csvs, "\n")
+#sales_files = pd.concat([pd.read_csv(x) for x in list_of_csvs])
+#sales_files
+#Aquí, glob.glob() devuelve una lista de todos los archivos que coinciden con el patrón dado.
+# Luego, usamos esa lista para leer y concatenar los archivos como antes.
+# Tenga en cuenta que el orden de los archivos en la lista puede no ser el esperado,
+# ya que glob los devuelve en el orden en que el sistema operativo los encuentra.
+
+
+# 8.4. Writing to a file 
+
+#Así como el patrón típico para leer archivos es pd.read_FILETYPE(), donde el tipo de archivo puede ser, 
+# por ejemplo, CSV, todas las formas de escribir marcos de datos de Pandas en el disco siguen el patrón 
+# DATAFRAME.to_FILETYPE(). Por lo tanto, para escribir nuestros datos de ventas en un archivo CSV, 
+# el código será sales_files.to_csv(FILEPATH), donde filepath es la ubicación y el nombre del archivo 
+# donde se desea escribir.
+
+#Veamos un ejemplo de escritura de datos en un archivo usando los datos de nuestros estudiantes, 
+# cuyos tipos de datos ya configuramos con gran éxito:
+
+#Veamos un ejemplo de escritura de datos en un archivo usando los datos de nuestros estudiantes, 
+# en cuyos tipos de datos ya hicimos un buen trabajo al configurarlos:
+
+students.to_csv("data/students-clean.csv")
+pd.read_csv("data/students-clean.csv").info()
+
+#¿Has notado algo? ¡Perdimos gran parte del buen trabajo con los tipos de datos! 
+# Aunque Pandas adivinó que algunas columnas son enteros, perdimos las variables de cadena y categóricas. 
+# Esto se debe a que los archivos de texto plano no pueden contener información contextual 
+# (aunque Pandas sí adivinó algunos tipos de datos de columna).
+# Si quieres guardar datos en un archivo y que este recuerde los tipos de datos, 
+# requiere usar un formato de datos diferente. 
+# Para almacenamiento temporal, recomendamos usar el formato feather, ya que es muy rápido 
+# e interoperable con otros lenguajes de programación. 
+# La interoperabilidad es una buena razón para evitar formatos de archivo específicos de cada lenguaje, 
+# como .dta de Stata, .rds de R y .pickle de Python.
+# Ten en cuenta que el formato feather tiene una dependencia adicional: un paquete llamado pyarrow. 
+# Aquí tienes un ejemplo de escritura en un archivo feather:
+students.to_feather("data/students-clean.feather")
+
+#Ahora volvamos a abrir ese archivo de plumas y echemos un vistazo a la información adjunta a él.
+pd.read_feather("data/students-clean.feather").info()
+#Al guardar en este formato se conserva nuestra información del tipo de datos.

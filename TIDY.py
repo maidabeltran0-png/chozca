@@ -26,9 +26,6 @@ import pandas as pd
 # Import the main pyarrow library
 import pyarrow as pa
 
-# Import the parquet module
-import pyarrow.parquet as pq
-
 # Import the csv module
 import pyarrow.csv as pv
 
@@ -41,9 +38,9 @@ df = pd.DataFrame(
         "weight": [130, 150],
     }
 )
-print("\n Unmelted: ")
+print("\n UNME: ")
 print(df)
-print("\n Melted: ")
+print("\n ME: ")
 df.melt(id_vars=["first", "last"], var_name="quantity", value_vars=["height", "weight"])
 
 #La función melt() se usa para reorganizar el DataFrame de formato ancho (“wide”) a formato largo (“long”).
@@ -201,7 +198,7 @@ df.pivot(index="date", columns="variable", values="value").shift(1)
 #6.3.5. Resumen
 #Aquí hay un resumen rápido de las funciones que hemos visto para reorganizar datos:
 # melt() → de ancho a largo.
-# wide_to_long() → de ancho a largo, para casos comunes.
+# wide_to_long() → de ancho a largP, para casos comunes.
 # stack() → de ancho a largo, para una sola variable.
 # unstack() → de largo a ancho, para una sola variable.
 # pivot() → de largo a ancho, para una o más variables.
