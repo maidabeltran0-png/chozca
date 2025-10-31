@@ -22,3 +22,5 @@ else:
 
 # Mostrar coeficientes de variación
 print(f"El coeficiente de variación del Conjunto A y B es respectivamente: {coef_variacion_a:.2f} y {coef_variacion_b:.2f}")
+
+

@@ -1,0 +1,21 @@
+#funcion que reciba cadena de texto  
+#retorne el caracter repetido mas de una vez.
+#si no hay carater repetido que retorne none
+#def mostrar_texto(cadena): → define una función llamada mostrar_texto que recibe un parámetro 
+# llamado cadena.
+# print("La cadena ingresada es:", cadena) → muestra por pantalla el texto recibido.
+# input() → permite que el usuario escriba una cadena desde el teclado.
+
+def primera_letra_repetida(texto):
+    texto_minuscula = texto.lower() ## Pasa todo el texto a minúsculas
+    texto_sin_espacios = texto_minuscula.replace (" ", "") # Elimina los espacios
+    lista_letras = [] ## Lista para guardar las letras vistas
+    for letra in texto_sin_espacios: #Recorre cada letra del texto
+        if letra in lista_letras:
+            return letra # Devuelve esa letra (es la primera repetida)
+        else:
+            lista_letras.append(letra)  # Si no está, la agrega a la lista
+    return None  # Si no hay letras repetidas, devuelve None
+
+print (primera_letra_repetida ("hola")) #none
+print (primera_letra_repetida ("hola mundo")) #o

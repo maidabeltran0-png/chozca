@@ -1,0 +1,26 @@
+#crear una funcion que reciba una cadena de texto que contenga la hora en formato doce horas:
+#horas: Minutos AM/PM
+#RETORNA CADENA DE TEXTO CON LA HORA EN FORMATO 24HS: HORAS:MINUTOS
+
+def convertir_a_24h(hora_12):
+    # Dividir la hora en sus partes: "hh:mm" y "AM/PM"
+    tiempo, periodo = hora_12.split()
+    
+    horas, minutos = map(int, tiempo.split(":"))
+    
+    # Convertir según AM o PM
+    if periodo.upper() == "PM" and horas != 12:
+        horas += 12
+    elif periodo.upper() == "AM" and horas == 12:
+        horas = 0
+    
+    # Devolver con formato 24h (dos dígitos)
+    return f"{horas:02d}:{minutos:02d}"
+
+# Ejemplos:
+print(convertir_a_24h("07:30 AM"))  # 07:30
+print(convertir_a_24h("12:00 PM"))  # 12:00
+print(convertir_a_24h("12:00 AM"))  # 00:00
+print(convertir_a_24h("09:45 PM"))  # 21:45
+
+#.split 
