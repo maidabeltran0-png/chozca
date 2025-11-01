@@ -22,5 +22,3 @@ print(convertir_a_24h("07:30 AM"))  # 07:30
 print(convertir_a_24h("12:00 PM"))  # 12:00
 print(convertir_a_24h("12:00 AM"))  # 00:00
 print(convertir_a_24h("09:45 PM"))  # 21:45
-
-#.split 
